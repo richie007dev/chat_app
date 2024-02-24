@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
@@ -11,19 +13,37 @@ class NewMessage extends StatefulWidget {
 
 class _NewMessageState extends State<NewMessage> {
   final _textController = TextEditingController();
-  void _submit(){
+  void _submit() async {
     final inputMessage = _textController.text;
-    if(inputMessage.trim().isEmpty){
+    if (inputMessage.trim().isEmpty) {
       return;
     }
-    // send to firebase
     _textController.clear();
+    FocusScope.of(context).unfocus();
+
+    // send to firebase
+    final currentUser = FirebaseAuth.instance.currentUser!;
+    final userData = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(currentUser.uid)
+        .get();
+    FirebaseFirestore.instance.collection('chat').add(
+      {
+        'text': inputMessage,
+        'createdAt': Timestamp.now(),
+        'userId': currentUser.uid,
+        'userName': userData.data()!['username'],
+        'userImage': userData.data()!['imageURL'],
+      },
+    );
   }
+
   @override
   void dispose() {
     _textController.dispose();
     super.dispose();
   }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -39,9 +59,7 @@ class _NewMessageState extends State<NewMessage> {
               textCapitalization: TextCapitalization.sentences,
               enableSuggestions: true,
               autocorrect: true,
-              decoration: const InputDecoration(
-                labelText: 'Send message...'
-              ),
+              decoration: const InputDecoration(labelText: 'Send message...'),
               controller: _textController,
             ),
           ),
