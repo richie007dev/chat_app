@@ -21,9 +21,10 @@ class _AuthScreenState extends State<AuthScreen> {
   File? _selectedImage;
   void _submit() async {
     final isValid = _form.currentState!.validate();
-    if (!isValid) {
+    if (!isValid || !_isLogin && _selectedImage == null) {
       return;
     }
+
     _form.currentState!.save();
     try {
       if (_isLogin) {
