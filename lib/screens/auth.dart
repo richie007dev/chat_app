@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:chat_app/widgets/user_image_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 
 final _firebase = FirebaseAuth.instance;
@@ -22,6 +23,7 @@ class _AuthScreenState extends State<AuthScreen> {
   void _submit() async {
     final isValid = _form.currentState!.validate();
     if (!isValid || !_isLogin && _selectedImage == null) {
+      //show error here
       return;
     }
 
@@ -31,8 +33,13 @@ class _AuthScreenState extends State<AuthScreen> {
         await _firebase.signInWithEmailAndPassword(
             email: _enteredEmail, password: _enteredPassword);
       } else {
-        await _firebase.createUserWithEmailAndPassword(
+        final userCredentials  = await _firebase.createUserWithEmailAndPassword(
             email: _enteredEmail, password: _enteredPassword);
+        final storageRef = FirebaseStorage.instance.ref().child('user_images').child('${userCredentials.user!.uid}.jpg');
+       await storageRef.putFile(_selectedImage!);
+       final imageURL = await storageRef.getDownloadURL();
+       print(imageURL);
+
       }
     } on FirebaseAuthException catch (error) {
       if (error.code == '') {
